@@ -1,8 +1,7 @@
 "use client";
 
 import { AssistantRuntimeProvider } from "@assistant-ui/react";
-import { useChatRuntime, AssistantChatTransport } from "@assistant-ui/ai-sdk";
-import { lastAssistantMessageIsCompleteWithToolCalls } from "ai";
+import { useStreamRuntime } from "@assistant-ui/react-langchain";
 import { Thread } from "@/components/assistant-ui/elements/thread.aui";
 import {
   SidebarInset,
@@ -21,11 +20,9 @@ import {
 } from "@/components/ui/breadcrumb";
 
 export const Assistant = () => {
-  const runtime = useChatRuntime({
-    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
-    transport: new AssistantChatTransport({
-      api: "/api/chat",
-    }),
+  const runtime = useStreamRuntime({
+    assistantId: process.env["NEXT_PUBLIC_LANGGRAPH_ASSISTANT_ID"]!,
+    apiUrl: process.env["NEXT_PUBLIC_LANGGRAPH_API_URL"],
   });
 
   return (

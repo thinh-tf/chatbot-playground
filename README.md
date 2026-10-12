@@ -8,7 +8,13 @@ First, add your OpenAI API key to `.env.local` file:
 OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
-Then, run the development server:
+Then start the LangGraph agent server (serves `agent/graph.ts` on http://localhost:2024):
+
+```bash
+npm run agent
+```
+
+In another terminal, run the development server:
 
 ```bash
 npm run dev
