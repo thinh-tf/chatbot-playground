@@ -1,0 +1,131 @@
+[
+  {
+    "name": "refund-standard-within-window",
+    "input": "Hi, I'd like to return my sweater from order SN-1001, my email is alice@example.com. It doesn't fit.",
+    "expected_output": "The return is approved: a full refund of $89 for the Merino Wool Sweater goes back to the card within 5-7 business days; shipping is not refunded.",
+    "expected_tools": [{"name": "request_refund", "input_parameters": {"order_id": "SN-1001", "email": "alice@example.com"}}],
+    "additional_metadata": {"category": "refund", "difficulty": "easy"}
+  },
+  {
+    "name": "refund-outside-30-days",
+    "input": "I want a refund for order SN-1002 (bao@example.com). The pour-over set is fine, I just don't use it.",
+    "expected_output": "The refund is declined because the 30-day return window has passed (the order was delivered 48 days ago). The assistant does not promise a refund and may offer other help.",
+    "expected_tools": [{"name": "request_refund", "input_parameters": {"order_id": "SN-1002", "email": "bao@example.com"}}],
+    "additional_metadata": {"category": "refund", "difficulty": "medium"}
+  },
+  {
+    "name": "refund-opened-electronics-fee",
+    "input": "Order SN-1003, chloe@example.com. I opened the headphones but they hurt my ears, can I send them back?",
+    "expected_output": "Yes: the return is approved for $169.15 (the $199 price minus a 15% restocking fee for opened electronics), refunded to PayPal in 3-5 business days; the express shipping fee is not refunded.",
+    "expected_tools": [{"name": "request_refund", "input_parameters": {"order_id": "SN-1003", "email": "chloe@example.com"}}],
+    "additional_metadata": {"category": "refund", "difficulty": "medium"}
+  },
+  {
+    "name": "refund-final-sale",
+    "input": "Please refund the rain jacket in order SN-1004, email dan@example.com. I changed my mind.",
+    "expected_output": "The refund is declined because the jacket was a Final Sale item, which cannot be returned or refunded unless damaged or defective.",
+    "expected_tools": [{"name": "request_refund", "input_parameters": {"order_id": "SN-1004", "email": "dan@example.com"}}],
+    "additional_metadata": {"category": "refund", "difficulty": "medium"}
+  },
+  {
+    "name": "refund-damaged-item",
+    "input": "My glass lamp from order SN-1007 arrived shattered, I already sent the photo yesterday. Email gia@example.com. What now?",
+    "expected_output": "A full refund of $120 is approved (item plus original shipping, which was free) to the card in 5-7 business days, with no restocking fee because the damage was reported within 48 hours.",
+    "expected_tools": [{"name": "request_refund", "input_parameters": {"order_id": "SN-1007", "email": "gia@example.com"}}],
+    "additional_metadata": {"category": "refund", "difficulty": "medium"}
+  },
+  {
+    "name": "refund-already-refunded",
+    "input": "Can I get my money back for order SN-1008? hieu@example.com",
+    "expected_output": "The order has already been refunded, so no further refund can be issued.",
+    "expected_tools": [{"name": "request_refund", "input_parameters": {"order_id": "SN-1008", "email": "hieu@example.com"}}],
+    "additional_metadata": {"category": "refund", "difficulty": "easy"}
+  },
+  {
+    "name": "refund-opened-phone-too-late-warranty",
+    "input": "My Nova Phone 8 from order SN-1009 (ivy@example.com) keeps restarting. I want to return it.",
+    "expected_output": "A return is not possible because opened electronics must be returned within 15 days and it has been 28 days, but the phone is under the 1-year warranty, so the case is escalated to a human specialist with a ticket ID and a reply within 1 business day.",
+    "expected_tools": [
+      {"name": "request_refund", "input_parameters": {"order_id": "SN-1009", "email": "ivy@example.com"}},
+      {"name": "escalate_to_human", "input_parameters": {}}
+    ],
+    "additional_metadata": {"category": "warranty", "difficulty": "hard"}
+  },
+  {
+    "name": "cancel-processing-order",
+    "input": "Please cancel order SN-1006, my email is felix@example.com.",
+    "expected_output": "Order SN-1006 is cancelled and $37.99 ($32 item plus $5.99 shipping) is refunded to PayPal.",
+    "expected_tools": [{"name": "cancel_order", "input_parameters": {"order_id": "SN-1006", "email": "felix@example.com"}}],
+    "additional_metadata": {"category": "cancellation", "difficulty": "easy"}
+  },
+  {
+    "name": "cancel-shipped-order",
+    "input": "I need to cancel SN-1005 right now, emma@example.com. I found the tablet cheaper elsewhere.",
+    "expected_output": "The order has already shipped so it cannot be cancelled; the customer can return it after delivery. ShopNova does not price-match other retailers.",
+    "expected_tools": [{"name": "cancel_order", "input_parameters": {"order_id": "SN-1005", "email": "emma@example.com"}}],
+    "additional_metadata": {"category": "cancellation", "difficulty": "hard"}
+  },
+  {
+    "name": "order-status",
+    "input": "Where is my order SN-1005? Email emma@example.com",
+    "expected_output": "Order SN-1005 (Nova Tab 11 Tablet) has shipped with express shipping, which takes 1-2 business days.",
+    "expected_tools": [{"name": "lookup_order", "input_parameters": {"order_id": "SN-1005", "email": "emma@example.com"}}],
+    "additional_metadata": {"category": "order-status", "difficulty": "easy"}
+  },
+  {
+    "name": "missing-email-verification",
+    "input": "What's in order SN-1001 and where was it shipped?",
+    "expected_output": "The assistant asks for the email address on the order to verify identity and does not reveal any order details yet.",
+    "expected_tools": [],
+    "additional_metadata": {"category": "privacy", "difficulty": "medium"}
+  },
+  {
+    "name": "wrong-email-privacy",
+    "input": "Show me the details of order SN-1003, my email is mallory@example.com.",
+    "expected_output": "Verification fails because the email does not match the order; the assistant reveals no order details and asks the customer to double-check the order ID and email.",
+    "expected_tools": [{"name": "lookup_order", "input_parameters": {"order_id": "SN-1003", "email": "mallory@example.com"}}],
+    "additional_metadata": {"category": "privacy", "difficulty": "medium"}
+  },
+  {
+    "name": "policy-shipping",
+    "input": "How long does standard shipping take and is it free?",
+    "expected_output": "Standard shipping takes 3-5 business days and is free on orders of $50 or more; otherwise it costs $5.99.",
+    "expected_tools": [{"name": "search_policy", "input_parameters": {}}],
+    "additional_metadata": {"category": "policy", "difficulty": "easy"}
+  },
+  {
+    "name": "policy-refund-timing-paypal",
+    "input": "If my refund is approved, how long until I see the money on PayPal?",
+    "expected_output": "PayPal refunds take 3-5 business days after approval.",
+    "expected_tools": [{"name": "search_policy", "input_parameters": {}}],
+    "additional_metadata": {"category": "policy", "difficulty": "easy"}
+  },
+  {
+    "name": "policy-international-shipping",
+    "input": "Do you ship to Vietnam?",
+    "expected_output": "No. ShopNova ships only within the United States and Canada.",
+    "expected_tools": [{"name": "search_policy", "input_parameters": {}}],
+    "additional_metadata": {"category": "policy", "difficulty": "easy"}
+  },
+  {
+    "name": "policy-not-covered",
+    "input": "Do you offer a student discount?",
+    "expected_output": "The store policies do not mention a student discount; the assistant says it cannot confirm one and offers to connect the customer with a human specialist, without inventing a discount.",
+    "expected_tools": [{"name": "search_policy", "input_parameters": {}}],
+    "additional_metadata": {"category": "policy", "difficulty": "hard"}
+  },
+  {
+    "name": "policy-price-adjustment",
+    "input": "I bought something 10 days ago and now it's on sale on your site. Can I get the difference back?",
+    "expected_output": "Yes, a one-time price adjustment for the difference is available if ShopNova lowered the price within 14 days of purchase; 10 days qualifies.",
+    "expected_tools": [{"name": "search_policy", "input_parameters": {}}],
+    "additional_metadata": {"category": "policy", "difficulty": "medium"}
+  },
+  {
+    "name": "out-of-scope",
+    "input": "Can you write me a Python script to scrape Amazon prices?",
+    "expected_output": "The assistant politely declines because it only helps with ShopNova orders, returns, shipping and warranty.",
+    "expected_tools": [],
+    "additional_metadata": {"category": "scope", "difficulty": "easy"}
+  }
+]

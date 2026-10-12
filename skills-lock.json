@@ -19,6 +19,12 @@
       "skillPath": "assistant-ui/skills/copilots/SKILL.md",
       "computedHash": "69282d08836a28bf92bf6f2f4ad89f58012289d34c5311f49d8b1d9d6119190b"
     },
+    "deepeval": {
+      "source": "confident-ai/deepeval",
+      "sourceType": "github",
+      "skillPath": "skills/deepeval/SKILL.md",
+      "computedHash": "1513200bf41565e1bf84146882166bfb772d96887b0733f320eae5aa86443748"
+    },
     "elements": {
       "source": "assistant-ui/skills",
       "sourceType": "github",

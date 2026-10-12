@@ -44,3 +44,8 @@ next-env.d.ts
 # Turborepo
 .turbo
 .langgraph_api
+
+# python eval env
+.venv/
+.deepeval/
+__pycache__/

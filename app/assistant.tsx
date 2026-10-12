@@ -1,23 +1,47 @@
 "use client";
 
-import { AssistantRuntimeProvider } from "@assistant-ui/react";
+import { AssistantRuntimeProvider, AuiConfig, Suggestions } from "@assistant-ui/react";
 import { useStreamRuntime } from "@assistant-ui/react-langchain";
-import { Thread } from "@/components/assistant-ui/elements/thread.aui";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { Thread, type ThreadComponents } from "@/components/assistant-ui/elements/thread.aui";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { ThreadListSidebar } from "@/components/assistant-ui/elements/threadlist-sidebar.aui";
 import { Separator } from "@/components/ui/separator";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+import { SupportToolCall, SupportToolGroup } from "@/components/support/tool-cards";
+import { SupportWelcome } from "@/components/support/welcome";
+
+const THREAD_COMPONENTS: ThreadComponents = {
+  Welcome: SupportWelcome,
+  ToolFallback: SupportToolCall,
+  ToolGroup: SupportToolGroup,
+};
+
+// One suggestion per behaviour the DeepEval suite checks (tests/evals/.dataset.json).
+const config = AuiConfig({
+  suggestions: Suggestions([
+    {
+      title: "Return opened headphones",
+      label: "order SN-1003, chloe@example.com",
+      prompt:
+        "Order SN-1003, chloe@example.com. I opened the headphones but they hurt my ears, can I send them back?",
+    },
+    {
+      title: "Damaged item",
+      label: "lamp arrived broken, SN-1007",
+      prompt:
+        "My glass lamp from order SN-1007 arrived shattered, I already sent the photo yesterday. Email gia@example.com. What now?",
+    },
+    {
+      title: "Cancel an order",
+      label: "SN-1006, felix@example.com",
+      prompt: "Please cancel order SN-1006, my email is felix@example.com.",
+    },
+    {
+      title: "Shipping policy",
+      label: "how long, is it free?",
+      prompt: "How long does standard shipping take and is it free?",
+    },
+  ]),
+});
 
 export const Assistant = () => {
   const runtime = useStreamRuntime({
@@ -26,7 +50,7 @@ export const Assistant = () => {
   });
 
   return (
-    <AssistantRuntimeProvider runtime={runtime}>
+    <AssistantRuntimeProvider runtime={runtime} config={config}>
       <SidebarProvider>
         <div className="flex h-dvh w-full pr-0.5">
           <ThreadListSidebar />
@@ -34,26 +58,15 @@ export const Assistant = () => {
             <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
               <SidebarTrigger />
               <Separator orientation="vertical" className="mr-2 h-4" />
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem className="hidden md:block">
-                    <BreadcrumbLink
-                      href="https://www.assistant-ui.com/docs/getting-started"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Build Your Own ChatGPT UX
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator className="hidden md:block" />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>Starter Template</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
+              <div className="flex flex-col leading-tight">
+                <span className="text-sm font-semibold">ShopNova Support</span>
+                <span className="text-muted-foreground text-xs">
+                  Nova · orders, returns, refunds, shipping
+                </span>
+              </div>
             </header>
             <div className="flex-1 overflow-hidden">
-              <Thread />
+              <Thread components={THREAD_COMPONENTS} />
             </div>
           </SidebarInset>
         </div>
