@@ -2,10 +2,10 @@ This is the [assistant-ui](https://github.com/assistant-ui/assistant-ui) starter
 
 ## Getting Started
 
-First, add your OpenAI API key to `.env.local` file:
+First, add your [Groq API key](https://console.groq.com/keys) to `.env.local` file:
 
 ```
-OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
 Then start the LangGraph agent server (serves `agent/graph.ts` on http://localhost:2024):
