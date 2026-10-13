@@ -24,6 +24,10 @@ export const SupportWelcome: FC = () => (
         I can check orders, process returns and refunds, cancel orders and answer shipping or
         warranty questions. Share your order ID and email to get started.
       </p>
+      <p className="text-muted-foreground mt-2 text-xs">
+        Tool-calling agent (LangGraph ReAct loop + agentic RAG over store policies), running on
+        Groq gpt-oss-120b.
+      </p>
     </div>
     <details className="text-sm">
       <summary className="text-muted-foreground cursor-pointer select-none">
