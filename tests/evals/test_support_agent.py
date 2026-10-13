@@ -3,14 +3,18 @@
 Requires the agent server:  npm run agent
 Run:  npm run eval                                  (prompt v2, the default)
       AGENT_PROMPT_VERSION=v1 npm run eval          (compare with the first prompt)
+      EVAL_GRADER=geval npm run eval                 (LLM judge on Groq instead of Jev)
 After `deepeval login`, every run is also uploaded to Confident AI.
 """
+
+import os
 
 import pytest
 import deepeval
 from deepeval import assert_test
 from deepeval.dataset import EvaluationDataset, Golden
-from deepeval.metrics import AnswerRelevancyMetric, FaithfulnessMetric, GEval, ToolCorrectnessMetric
+from deepeval.metrics import AnswerRelevancyMetric, FaithfulnessMetric, GEval, JevEval, ToolCorrectnessMetric
+from deepeval.metrics.jev_eval import Choice, Noul, Score
 from deepeval.test_case import LLMTestCase, LLMTestCaseParams
 
 from agent_client import AGENT_MODEL, DATASET_PATH, PROMPT_VERSION, expected_tools, make_judge, run_agent
@@ -20,6 +24,15 @@ dataset.add_goldens_from_json_file(str(DATASET_PATH))
 
 judge = make_judge()
 
+# All LLM-judged metrics are graded by Jev (TypeSafe AI): it answers fixed yes/no and multiple-choice
+# questions with probabilities, so the score is the same on every re-run and no Groq quota is spent on
+# judging. An LLM judge writes its score as text, which drifts between runs and between judge models.
+GRADER = os.environ.get("EVAL_GRADER", "jev")
+if GRADER == "jev":
+    from deepeval.models import TypeSafeModel
+
+    jev = TypeSafeModel(api_key=os.environ["TYPESAFE_API_KEY"])
+
 
 # Shown on Confident AI next to each run, so runs can be compared by prompt version / model.
 @deepeval.log_hyperparameters
@@ -28,6 +41,7 @@ def hyperparameters():
         "agent model": AGENT_MODEL,
         "prompt version": PROMPT_VERSION,
         "judge model": judge.get_model_name(),
+        "grader": jev.get_model_name() if GRADER == "jev" else "geval",
     }
 
 
@@ -70,21 +84,115 @@ POLICY_COMPLIANCE = dict(
 )
 
 
+# Jev versions of the two metrics above: the same checks, written as questions about test case fields.
+JEV_CORRECTNESS = [
+    Noul(
+        "actual_output reaches the same outcome as expected_output (approved, denied, cancelled, not "
+        "cancellable, asks for missing info, or declines an out-of-scope request).",
+        weight=3,
+    ),
+    Noul(
+        "actual_output does not contradict any amount, fee, timeline, refund method or escalation stated "
+        "in expected_output.",
+        weight=2,
+    ),
+    Score(
+        "How many of the key facts in expected_output (amounts, fees, timelines, refund method, "
+        "escalation) does actual_output also state? Wording and formatting do not matter.",
+        levels=["none of them", "some of them", "most of them", "all of them"],
+    ),
+]
+
+
+def jev_compliance(has_context: bool) -> list:
+    if has_context:
+        grounded = [
+            # Reporting a status ("already refunded", "refund denied") is not an action claim; only
+            # something the assistant says it just did counts.
+            Choice(
+                "Does actual_output say the assistant itself just did something for the customer "
+                "(approved a refund, cancelled an order, escalated the case, created a ticket ID), and "
+                "does retrieval_context show that action succeeding?",
+                options={
+                    "no, it only reports a decision or status": None,
+                    "yes, and retrieval_context shows it succeeded": 1.0,
+                    "yes, but retrieval_context does not show it": 0.0,
+                },
+                weight=3,
+            ),
+            Noul(
+                "Every policy rule, amount, timeline and order detail stated in actual_output is supported "
+                "by retrieval_context.",
+                weight=2,
+            ),
+        ]
+    else:
+        # No tool ran, so the bot had nothing to ground order facts, actions or policy statements on.
+        grounded = [
+            Noul(
+                "actual_output does not claim a refund, cancellation, escalation or ticket ID, and does not "
+                "state order details such as items, status, dates or amounts.",
+                weight=3,
+            ),
+            Noul(
+                "actual_output does not state a store policy as fact (for example that a discount or "
+                "service is or is not offered); asking for the order ID and email is fine.",
+                weight=2,
+            ),
+        ]
+    return grounded + [
+        Noul(
+            "actual_output only helps with ShopNova orders, returns, refunds, shipping and store policy, "
+            "and declines requests unrelated to the store."
+        ),
+        Noul(
+            "actual_output does not mention internal tool names such as request_refund or lookup_order.",
+            weight=0.5,
+        ),
+    ]
+
+
 def metrics_for(test_case: LLMTestCase) -> list:
     # Fresh metric objects per test case: metrics keep score/reason state.
     compliance_params = [LLMTestCaseParams.INPUT, LLMTestCaseParams.ACTUAL_OUTPUT]
     if test_case.retrieval_context:
         compliance_params.append(LLMTestCaseParams.RETRIEVAL_CONTEXT)
-    metrics = [
-        GEval(model=judge, **CORRECTNESS),
-        GEval(model=judge, evaluation_params=compliance_params, **POLICY_COMPLIANCE),
-    ]
+    if GRADER == "jev":
+        metrics = [
+            JevEval(
+                name=CORRECTNESS["name"],
+                evaluation_params=CORRECTNESS["evaluation_params"],
+                questions=JEV_CORRECTNESS,
+                system_one_model=jev,
+                threshold=CORRECTNESS["threshold"],
+            ),
+            JevEval(
+                name=POLICY_COMPLIANCE["name"],
+                evaluation_params=compliance_params,
+                questions=jev_compliance(bool(test_case.retrieval_context)),
+                system_one_model=jev,
+                threshold=POLICY_COMPLIANCE["threshold"],
+            ),
+        ]
+        # eval_mode="system_one": Jev runs the whole built-in metric, no Groq call at all.
+        built_in_judge = dict(eval_mode="system_one", system_one_model=jev)
+        # Jev's score is a probability-weighted mean, not the LLM's share of supported claims: an
+        # undecided answer (P≈0.5) on long context pulls a correct reply to ~0.66-0.78, while the
+        # ungrounded replies seen so far scored ≤0.58 on Compliance or ≤0.51 on Faithfulness.
+        relevancy_threshold, faithfulness_threshold = 0.65, 0.65
+    else:
+        built_in_judge = dict(model=judge)
+        relevancy_threshold, faithfulness_threshold = 0.7, 0.8
+        metrics = [
+            GEval(model=judge, **CORRECTNESS),
+            GEval(model=judge, evaluation_params=compliance_params, **POLICY_COMPLIANCE),
+        ]
     # Answer Relevancy scores a correct refusal as 0 (it does not "answer" the request), so it is
     # skipped where refusing is the expected behaviour; Correctness/Compliance check those cases.
     if (test_case.additional_metadata or {}).get("category") != "scope":
-        metrics.insert(0, AnswerRelevancyMetric(model=judge, threshold=0.7))
+        metrics.insert(0, AnswerRelevancyMetric(threshold=relevancy_threshold, **built_in_judge))
     if test_case.retrieval_context:
-        metrics.append(FaithfulnessMetric(model=judge, threshold=0.8))
+        metrics.append(FaithfulnessMetric(threshold=faithfulness_threshold, **built_in_judge))
     if test_case.expected_tools:
         metrics.append(ToolCorrectnessMetric(model=judge, threshold=1.0))
     return metrics
