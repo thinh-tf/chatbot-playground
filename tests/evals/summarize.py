@@ -1,4 +1,4 @@
-"""Compact summary of the latest `deepeval test run` (.deepeval/.latest_test_run.json).
+"""Compact summary of the latest `deepeval test run` (.deepeval/.latest_run_full.json).
 
 Usage:  .venv/bin/python tests/evals/summarize.py [--reasons]
 """
@@ -8,12 +8,18 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
-RUN_FILE = Path(__file__).resolve().parents[2] / ".deepeval" / ".latest_test_run.json"
+# After `deepeval login`, .latest_test_run.json only keeps the Confident AI link; the full results
+# are in .latest_run_full.json.
+DEEPEVAL_DIR = Path(__file__).resolve().parents[2] / ".deepeval"
+RUN_FILE = next(
+    f for f in (DEEPEVAL_DIR / ".latest_run_full.json", DEEPEVAL_DIR / ".latest_test_run.json") if f.exists()
+)
 
 
 def main() -> None:
     show_reasons = "--reasons" in sys.argv
-    run = json.loads(RUN_FILE.read_text())["testRunData"]
+    data = json.loads(RUN_FILE.read_text())
+    run = data.get("testRunData", data)
     cases = sorted(run["testCases"], key=lambda c: c.get("order", 0))
 
     per_metric = defaultdict(list)

@@ -64,6 +64,12 @@ export const Assistant = () => {
                   Nova · orders, returns, refunds, shipping
                 </span>
               </div>
+              <span
+                className="text-muted-foreground ml-auto rounded-full border px-2.5 py-0.5 text-xs"
+                title="LangGraph ReAct loop: the LLM picks a tool, reads its result, then calls another tool or replies. search_policy retrieves policy sections (agentic RAG)."
+              >
+                Tool-calling agent · LangGraph + RAG
+              </span>
             </header>
             <div className="flex-1 overflow-hidden">
               <Thread components={THREAD_COMPONENTS} />
