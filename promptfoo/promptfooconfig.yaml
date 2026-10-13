@@ -1,12 +1,12 @@
 # yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
-description: Groq chat smoke test (same model as agent/graph.ts)
+description: Groq chat smoke test (target gpt-oss-20b, grader gpt-oss-120b)
 
 prompts:
   - '{{message}}'
 
 providers:
   - id: https
-    label: groq-gpt-oss-120b
+    label: groq-gpt-oss-20b
     config:
       url: https://api.groq.com/openai/v1/chat/completions
       method: POST
@@ -15,7 +15,7 @@ providers:
         Content-Type: application/json
         Authorization: 'Bearer {{env.GROQ_API_KEY}}'
       body:
-        model: openai/gpt-oss-120b
+        model: openai/gpt-oss-20b
         reasoning_effort: low
         messages:
           - role: user
@@ -32,3 +32,8 @@ defaultTest:
     provider: groq:openai/gpt-oss-120b # llm-rubric grader; reads GROQ_API_KEY
 
 tests: file://tests/*.yaml
+
+# Relative to the cwd, so run from the repo root.
+outputPath:
+  - promptfoo/results/output.json
+  - promptfoo/results/output.html
